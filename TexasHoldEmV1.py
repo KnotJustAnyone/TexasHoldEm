@@ -73,7 +73,7 @@ def evaluate_hand(cards):
         return (4,ranks[-1])
     elif 3 in rank_counts.values():
         return (3,rank_counts.most_common(1))
-    elif list(rank_counts.values()).count(2) == 2:
+    elif list(rank_counts.values()).count(2) >= 2:
         return (2,rank_counts.most_common(2))
     elif 2 in rank_counts.values():
         return (1,rank_counts.most_common(1))
@@ -100,16 +100,21 @@ class TexasHoldemGame:
 
     def evaluate_winner(self):
         best_hand = None
-        winner = None
+        winner = []
         card_ranks = ["a High Card","a Pair","Two Pair","a Three of a Kind","a Straight","a Flush","a Full House", "a Four of a Kind", "a Straight Flush", "a Royal Flush"]
         for player in self.players:
             hand = player.hand + self.community_cards
             rank = evaluate_hand(hand)
             print(f"{player.name} has a {card_ranks[rank[0]]}: {player.show_hand()}")
-            if (winner == None or rank[0] > best_hand[0] or (rank[0] == best_hand[0] and rank[1] > best_hand[1])):
-                winner = player
+            if (winner == [] or rank[0] > best_hand[0] or (rank[0] == best_hand[0] and rank[1] > best_hand[1])):
+                winner = [player]
                 best_hand = rank
-        print(f"The winner is {winner.name} with {card_ranks[best_hand[0]]}")
+            elif (winner != [] and rank[0] == best_hand[0] and rank[1] == best_hand[1]):
+                winner.append(player)
+        if len(winner) == 1:
+            print(f"The winner is {winner[0].name} with {card_ranks[best_hand[0]]}")
+        else:
+            print(f"The winners are {[player.name for player in winner]} with {card_ranks[best_hand[0]]}")
         return winner
 
     def shuffle(self):
@@ -136,7 +141,8 @@ while len(game.players) > 1:
 
     # Determine the winner
     winner = game.evaluate_winner()
-    winner.bank += game.pot
+    for player in winner:
+        player.bank += game.pot/len(winner)
     game.pot = 0
     game.shuffle()
     game.players = [player for player in game.players if player.bank > 0]
