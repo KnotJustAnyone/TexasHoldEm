@@ -84,7 +84,7 @@ def describe_rank(rank):
     if rank[0] == 0:
         return f"{rank[1]} high"
     elif rank[0] == 1:
-        return f"a pair of {rank[1]}s high"
+        return f"a pair of {rank[1][0][0]}s"
     elif rank[0] == 2:
         return f"two pair, {rank[1][0][0]}s and {rank[1][1][0]}s"
     elif rank[0] == 3:
