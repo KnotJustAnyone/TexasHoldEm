@@ -94,7 +94,7 @@ def describe_rank(rank):
     elif rank[0] == 5:
         return f"a flush"
     elif rank[0] == 6:
-        return f"a full house, {rank[1][0]} over {rank[1][1]}"
+        return f"a full house, {rank[1][0][0]} over {rank[1][1][0]}"
     elif rank[0] == 7:
         return f"a four of a kind, {rank[1]}s"
     elif rank[0] == 8:
