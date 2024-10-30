@@ -136,7 +136,7 @@ class TexasHoldemGame:
         if len(winner) == 1:
             print(f"The winner is {winner[0].name} with {describe_rank(best_hand)}")
         else:
-            print(f"The winners are {[player.name for player in winner]} with {card_ranks[best_hand[0]]}")
+            print(f"The winners are {[player.name for player in winner]} with {describe_rank(best_hand)}")
         return winner
 
     def shuffle(self):
