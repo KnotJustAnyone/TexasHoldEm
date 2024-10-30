@@ -57,7 +57,7 @@ def evaluate_hand(cards):
     rank_counts = Counter(ranks)
     suit_counts = Counter(suits)
     if max(suit_counts.values()) >= 5:
-        flush_suit = suit.counts.most_common(1)[0]
+        flush_suit = suits.counts.most_common(1)[0]
         flush_rank = [card.rank for card in cards if card.suit == flush_suit]
         if sorted(flush_rank) == ['10', 'J', 'Q', 'K', 'A']:
             return (9,ranks[-1])
