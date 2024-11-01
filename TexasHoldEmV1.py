@@ -49,6 +49,20 @@ class Player:
     def show_hand(self):
         return ', '.join(str(card) for card in self.hand)
 
+def straight_check(ranks):
+    sorted_set_ranks = set(sorted(ranks))
+    best = None
+    for n in range(0,8):
+        if (RANKS[n] in sorted_set_ranks and
+           RANKS[n+1] in sorted_set_ranks and 
+           RANKS[n+2] in sorted_set_ranks and 
+           RANKS[n+3] in sorted_set_ranks and 
+           RANKS[n+4] in sorted_set_ranks):
+            best = n
+    return best
+
+
+
 # Basic poker hand ranking evaluator
 def evaluate_hand(cards):
     """Basic hand evaluator for a 5-card hand."""
@@ -59,18 +73,18 @@ def evaluate_hand(cards):
     if max(suit_counts.values()) >= 5:
         flush_suit = suit_counts.most_common(1)[0]
         flush_rank = [card.rank for card in cards if card.suit == flush_suit]
-        if sorted(flush_rank) == ['10', 'J', 'Q', 'K', 'A']:
-            return (9,ranks[-1])
-        elif sorted(flush_rank) == [str(x) for x in range(int(ranks[0]), int(ranks[0]) + 5)]:
-            return (8,ranks[-1])
+        if set(['10', 'J', 'Q', 'K', 'A']) <= set(flush_rank):
+            return (9,'A')
+        elif straight_check(flush_rank) != none:
+            return (8,straight_check(flush_rank))
     if 4 in rank_counts.values():
         return (7,rank_counts.most_common(1))
     elif 3 in rank_counts.values() and 2 in rank_counts.values():
         return (6,rank_counts.most_common(2))
     elif max(suit_counts.values()) >= 5:
         return (5,0)
-    elif ranks == [str(x) for x in range(int(ranks[0]), int(ranks[0]) + 5)]:
-        return (4,ranks[-1])
+    elif straight_check(ranks) != None:
+        return (4,straight_check(ranks))
     elif 3 in rank_counts.values():
         return (3,rank_counts.most_common(1))
     elif list(rank_counts.values()).count(2) >= 2:
@@ -90,7 +104,7 @@ def describe_rank(rank):
     elif rank[0] == 3:
         return f"a three of a kind, {rank[1][0][0]}s"
     elif rank[0] == 4:
-        return f"a straight, {rank[1]} high"
+        return f"a straight, starting from {rank[1]}"
     elif rank[0] == 5:
         return f"a flush"
     elif rank[0] == 6:
@@ -127,7 +141,7 @@ class TexasHoldemGame:
         for player in self.players:
             hand = player.hand + self.community_cards
             rank = evaluate_hand(hand)
-            print(f"{player.name} has a {card_ranks[rank[0]]}")
+            print(f"{player.name} has {card_ranks[rank[0]]}")
             if (winner == [] or rank[0] > best_hand[0] or (rank[0] == best_hand[0] and rank[1] > best_hand[1])):
                 winner = [player]
                 best_hand = rank
