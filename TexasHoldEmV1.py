@@ -38,16 +38,21 @@ class Hand:
         return sorted(ranks, reverse=True)
 
 class Player:
-    def __init__(self, name, bank):
+    def __init__(self, name, bank, strategy):
         self.name = name
         self.hand = []
         self.bank = bank
+        self.strategy = strategy
 
     def receive_cards(self, cards):
         self.hand.extend(cards)
 
     def show_hand(self):
         return ', '.join(str(card) for card in self.hand)
+    
+#Potential Strategies
+def ComputerStrategy():
+    return 5
 
 def straight_check(ranks):
     sorted_set_ranks = set(sorted(ranks))
@@ -104,7 +109,7 @@ def describe_rank(rank):
     elif rank[0] == 3:
         return f"a three of a kind, {rank[1][0][0]}s"
     elif rank[0] == 4:
-        return f"a straight, starting from {rank[1]}"
+        return f"a straight, starting from {rank[1]+2}"
     elif rank[0] == 5:
         return f"a flush"
     elif rank[0] == 6:
@@ -120,7 +125,7 @@ def describe_rank(rank):
 class TexasHoldemGame:
     def __init__(self, player_names, bank):
         self.deck = Deck()
-        self.players = [Player(name,bank) for name in player_names]
+        self.players = [Player(name,bank,ComputerStrategy) for name in player_names]
         self.community_cards = []
         self.pot = 0
 
@@ -169,18 +174,21 @@ while len(game.players) > 1:
     game.pot = 0
     game.list_players()
     for player in game.players:
-        player.bank -= 5
-        game.pot += 5
+        bet = player.strategy()
+        player.bank -= bet
+        game.pot += bet
     game.deal_hands()
     game.deal_community()
 
     # Show initial state
     print("Community Cards:", game.show_community_cards())
-    for player in game.players:
-        print(f"{player.name}'s hand: {player.show_hand()}")
 
     # Determine the winner
+    for player in game.players:
+        print(f"{player.name}'s hand: {player.show_hand()}")
     winner = game.evaluate_winner()
+
+    #Resolve the hand and reshuffle
     for player in winner:
         player.bank += game.pot/len(winner)
     game.pot = 0
