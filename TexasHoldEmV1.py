@@ -124,6 +124,9 @@ class TexasHoldemGame:
         self.community_cards = []
         self.pot = 0
 
+    def list_players(self):
+        print(f"{[player.name+"("+str(player.bank)+")" for player in self.players]}")
+
     def deal_hands(self):
         for player in self.players:
             player.receive_cards(self.deck.deal(2))
@@ -160,10 +163,11 @@ class TexasHoldemGame:
         self.deck = Deck()
 
 # Game Setup
-game = TexasHoldemGame(["Alice", "Bob"],10)
+game = TexasHoldemGame(["Alice", "Bob", "Carol","David"],10)
 winner = None
 while len(game.players) > 1:
     game.pot = 0
+    game.list_players()
     for player in game.players:
         player.bank -= 5
         game.pot += 5
