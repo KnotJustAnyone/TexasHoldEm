@@ -43,6 +43,8 @@ class Player:
         self.hand = []
         self.bank = bank
         self.strategy = strategy
+        self.bet = 0
+        self.status = 1 #0 means fold, 1 means ready, 2 means all-in 
 
     def receive_cards(self, cards):
         self.hand.extend(cards)
@@ -147,14 +149,15 @@ class TexasHoldemGame:
         winner = []
         card_ranks = ["a High Card","a Pair","Two Pair","a Three of a Kind","a Straight","a Flush","a Full House", "a Four of a Kind", "a Straight Flush", "a Royal Flush"]
         for player in self.players:
-            hand = player.hand + self.community_cards
-            rank = evaluate_hand(hand)
-            print(f"{player.name} has {card_ranks[rank[0]]}")
-            if (winner == [] or rank[0] > best_hand[0] or (rank[0] == best_hand[0] and rank[1] > best_hand[1])):
-                winner = [player]
-                best_hand = rank
-            elif (winner != [] and rank[0] == best_hand[0] and rank[1] == best_hand[1]):
-                winner.append(player)
+            if player.status > 0:
+                hand = player.hand + self.community_cards
+                rank = evaluate_hand(hand)
+                print(f"{player.name} has {card_ranks[rank[0]]}")
+                if (winner == [] or rank[0] > best_hand[0] or (rank[0] == best_hand[0] and rank[1] > best_hand[1])):
+                    winner = [player]
+                    best_hand = rank
+                elif (winner != [] and rank[0] == best_hand[0] and rank[1] == best_hand[1]):
+                    winner.append(player)
         if len(winner) == 1:
             print(f"The winner is {winner[0].name} with {describe_rank(best_hand)}")
         else:
@@ -170,28 +173,76 @@ class TexasHoldemGame:
 # Game Setup
 game = TexasHoldemGame(["Alice", "Bob", "Carol","David"],10)
 winner = None
+dealer = 0
 while len(game.players) > 1:
     game.pot = 0
     game.list_players()
-    for player in game.players:
-        bet = player.strategy()
-        player.bank -= bet
-        game.pot += bet
-    game.deal_hands()
-    game.deal_community()
 
-    # Show initial state
+    #Call for Bets
+    for player in game.players:
+        player.bet = 0
+        player.status = 1 #0 means fold, 1 means in, 2 means all-in
+    game.players[dealer+1].bank -= 1
+    game.players[dealer+1].bet += 1
+    game.pot += 1
+    game.players[dealer+2].bank -= 2
+    game.players[dealer+2].bet += 2
+    game.pot += 2
+    calls = -1
+    bet_to = (dealer+3)%len(game.players)
+    game.deal_hands()
+    while (calls < len(game.players)):
+        if game.players[bet_to].status != 1:
+            calls += 1
+        else:
+            bet = game.players[bet_to].strategy()
+            if bet >= game.players[bet_to].bank:
+                game.players[bet_to].status = 2
+                calls = 0
+                game.pot += game.players[bet_to].bank
+                game.players[bet_to].bet += game.players[bet_to].bank
+                game.players[bet_to].bank = 0
+                print(f"{game.players[bet_to].name} goes all in")
+            elif bet+game.players[bet_to].bet < max([player.bet for player in game.players]):
+                game.players[bet_to].state = 0
+                calls += 1
+                bet_to = (bet_to+1)%len(game.players)
+                print(f"{game.players[bet_to].name} folds")
+            elif bet+game.players[bet_to].bet == max([player.bet for player in game.players]):
+                calls += 1
+                game.pot += bet
+                game.players[bet_to].bet += bet
+                game.players[bet_to].bank -= bet
+                print(f"{game.players[bet_to].name} calls")
+            elif bet+game.players[bet_to].bet > max([player.bet for player in game.players]):
+                calls = 0
+                game.pot += bet
+                game.players[bet_to].bet += bet
+                game.players[bet_to].bank -= bet
+                print(f"{game.players[bet_to].name} raises to {game.players[bet_to].bet}")
+        bet_to = (bet_to+1)%len(game.players)
+    game.deal_community()
     print("Community Cards:", game.show_community_cards())
 
-    # Determine the winner
+    # Determine the winner, Resolve the hand and reshuffle
     for player in game.players:
-        print(f"{player.name}'s hand: {player.show_hand()}")
-    winner = game.evaluate_winner()
-
-    #Resolve the hand and reshuffle
-    for player in winner:
-        player.bank += game.pot/len(winner)
-    game.pot = 0
+        if player.status > 0:
+            print(f"{player.name}'s hand: {player.show_hand()}")
+    while game.pot > 0:
+        winner = game.evaluate_winner()
+        winning_bet = 0
+        for player in winner:
+            if player.bet > winning_bet:
+                winning_bet = player.bet
+        side_pot = 0
+        for player in game.players:
+            side_pot += min(player.bet,winning_bet)
+            game.pot -= min(player.bet,winning_bet)
+            player.bet -= min(player.bet,winning_bet)
+            if player.bet == 0:
+                player.status = 0
+        for player in winner:
+            player.bank += side_pot/len(winner)
     game.shuffle()
     game.players = [player for player in game.players if player.bank > 0]
     print("\n")
