@@ -56,6 +56,9 @@ class Player:
 def AllCall(this_player, game):
     return max([player.bet for player in game.players])-this_player.bet
 
+def BetHalf(this_player, game):
+    return round(this_player.bank/2)-this_player.bet
+
 def straight_check(ranks):
     sorted_set_ranks = set(sorted(ranks))
     best = None
@@ -125,11 +128,15 @@ def describe_rank(rank):
 
 # Define the Texas Hold'em Game class
 class TexasHoldemGame:
-    def __init__(self, player_names, bank):
+    def __init__(self, buy_in):
         self.deck = Deck()
-        self.players = [Player(name,bank,AllCall) for name in player_names]
+        self.players = []
         self.community_cards = []
         self.pot = 0
+        self.buy_in = buy_in
+
+    def add_player(self, player_name, strategy):
+        self.players += [Player(player_name,self.buy_in,strategy)]
 
     def list_players(self):
         print(f"{[player.name+"("+str(player.bank)+")" for player in self.players]}")
@@ -174,7 +181,11 @@ class TexasHoldemGame:
         self.deck = Deck()
 
 # Game Setup
-game = TexasHoldemGame(["Alice", "Bob", "Carol","David"],10)
+game = TexasHoldemGame(10)
+game.add_player("Alice",AllCall)
+game.add_player("Bob",AllCall)
+game.add_player("Carol",AllCall)
+game.add_player("David",AllCall)
 winner = None
 dealer = game.players[0]
 while len(game.players) > 1:
