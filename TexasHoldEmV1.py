@@ -53,8 +53,8 @@ class Player:
         return ', '.join(str(card) for card in self.hand)
     
 #Potential Strategies
-def ComputerStrategy():
-    return 5
+def AllCall(this_player, game):
+    return max([player.bet for player in game.players])-this_player.bet
 
 def straight_check(ranks):
     sorted_set_ranks = set(sorted(ranks))
@@ -82,7 +82,7 @@ def evaluate_hand(cards):
         flush_rank = [card.rank for card in cards if card.suit == flush_suit]
         if set(['10', 'J', 'Q', 'K', 'A']) <= set(flush_rank):
             return (9,'A')
-        elif straight_check(flush_rank) != none:
+        elif straight_check(flush_rank) != None:
             return (8,straight_check(flush_rank))
     if 4 in rank_counts.values():
         return (7,rank_counts.most_common(1))
@@ -127,12 +127,15 @@ def describe_rank(rank):
 class TexasHoldemGame:
     def __init__(self, player_names, bank):
         self.deck = Deck()
-        self.players = [Player(name,bank,ComputerStrategy) for name in player_names]
+        self.players = [Player(name,bank,AllCall) for name in player_names]
         self.community_cards = []
         self.pot = 0
 
     def list_players(self):
         print(f"{[player.name+"("+str(player.bank)+")" for player in self.players]}")
+
+    def next_player(self, player):
+        return self.players[(self.players.index(player)+1)%len(self.players)]
 
     def deal_hands(self):
         for player in self.players:
@@ -173,7 +176,7 @@ class TexasHoldemGame:
 # Game Setup
 game = TexasHoldemGame(["Alice", "Bob", "Carol","David"],10)
 winner = None
-dealer = 0
+dealer = game.players[0]
 while len(game.players) > 1:
     game.pot = 0
     game.list_players()
@@ -182,45 +185,46 @@ while len(game.players) > 1:
     for player in game.players:
         player.bet = 0
         player.status = 1 #0 means fold, 1 means in, 2 means all-in
-    game.players[dealer+1].bank -= 1
-    game.players[dealer+1].bet += 1
+    better = game.next_player(dealer)
+    better.bank -= 1
+    better.bet += 1
     game.pot += 1
-    game.players[dealer+2].bank -= 2
-    game.players[dealer+2].bet += 2
+    better = game.next_player(better)
+    better.bank -= 2
+    better.bet += 2
     game.pot += 2
     calls = -1
-    bet_to = (dealer+3)%len(game.players)
+    better = game.next_player(better)
     game.deal_hands()
-    while (calls < len(game.players)):
-        if game.players[bet_to].status != 1:
+    while (calls < len(game.players)-1):
+        if better.status != 1:
             calls += 1
         else:
-            bet = game.players[bet_to].strategy()
-            if bet >= game.players[bet_to].bank:
-                game.players[bet_to].status = 2
+            bet = better.strategy(better,game)
+            if bet >= better.bank:
+                better.status = 2
                 calls = 0
-                game.pot += game.players[bet_to].bank
-                game.players[bet_to].bet += game.players[bet_to].bank
-                game.players[bet_to].bank = 0
-                print(f"{game.players[bet_to].name} goes all in")
-            elif bet+game.players[bet_to].bet < max([player.bet for player in game.players]):
-                game.players[bet_to].state = 0
+                game.pot += better.bank
+                better.bet += better.bank
+                better.bank = 0
+                print(f"{better.name} goes all in")
+            elif bet+better.bet < max([player.bet for player in game.players]):
+                better.state = 0
                 calls += 1
-                bet_to = (bet_to+1)%len(game.players)
-                print(f"{game.players[bet_to].name} folds")
-            elif bet+game.players[bet_to].bet == max([player.bet for player in game.players]):
+                print(f"{better.name} folds")
+            elif bet+better.bet == max([player.bet for player in game.players]):
                 calls += 1
                 game.pot += bet
-                game.players[bet_to].bet += bet
-                game.players[bet_to].bank -= bet
-                print(f"{game.players[bet_to].name} calls")
-            elif bet+game.players[bet_to].bet > max([player.bet for player in game.players]):
+                better.bet += bet
+                better.bank -= bet
+                print(f"{better.name} calls")
+            elif bet+better.bet > max([player.bet for player in game.players]):
                 calls = 0
                 game.pot += bet
-                game.players[bet_to].bet += bet
-                game.players[bet_to].bank -= bet
-                print(f"{game.players[bet_to].name} raises to {game.players[bet_to].bet}")
-        bet_to = (bet_to+1)%len(game.players)
+                better.bet += bet
+                better.bank -= bet
+                print(f"{better.name} raises to {better.bet}")
+        better = game.next_player(better)
     game.deal_community()
     print("Community Cards:", game.show_community_cards())
 
@@ -244,5 +248,8 @@ while len(game.players) > 1:
         for player in winner:
             player.bank += side_pot/len(winner)
     game.shuffle()
+    dealer = game.next_player(dealer)
+    while(dealer.bank == 0):
+        dealer = game.next_player(dealer)
     game.players = [player for player in game.players if player.bank > 0]
     print("\n")
