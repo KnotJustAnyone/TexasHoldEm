@@ -60,6 +60,7 @@ def BetHalf(this_player, game):
     return round(this_player.bank/2)-this_player.bet
 
 def Human_Player(this_player, game):
+    print(f"{this_player.name}'s hand is {this_player.hand}")
     bet = input(f"{max([player.bet for player in game.players])} to {this_player.name}.\n"+
                 f"{this_player.name} is in for {this_player.bet}. What do you want to put in?")
     try:
@@ -115,7 +116,7 @@ def evaluate_hand(cards):
         second_pair = max([rank for rank,count in rank_counts.items() if (count >= 2 and rank != first_pair)])
         return (2,[first_pair,second_pair])
     elif 2 in rank_counts.values():
-        return (1,rank_counts.most_common(1))
+        return (1,max([rank for rank,count in rank_counts.items() if count >= 2]))
     else:
         return (0,max(ranks))
     
@@ -228,13 +229,14 @@ while len(game.players) > 1:
             bet = better.strategy(better,game)
             if bet >= better.bank:
                 better.status = 2
-                calls = 0
+                if bet+better.bet > max([player.bet for player in game.players])
+                    calls = 0
                 game.pot += better.bank
                 better.bet += better.bank
                 better.bank = 0
                 print(f"{better.name} goes all in")
             elif bet+better.bet < max([player.bet for player in game.players]):
-                better.state = 0
+                better.status = 0
                 calls += 1
                 print(f"{better.name} folds")
             elif bet+better.bet == max([player.bet for player in game.players]):
@@ -278,4 +280,4 @@ while len(game.players) > 1:
     while(dealer.bank == 0):
         dealer = game.next_player(dealer)
     game.players = [player for player in game.players if player.bank > 0]
-    print("\n")
+    input("Press enter for next round.\n")
