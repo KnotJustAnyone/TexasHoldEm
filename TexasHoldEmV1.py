@@ -62,7 +62,7 @@ def BetHalf(this_player, game):
 def straight_check(ranks):
     sorted_set_ranks = set(sorted(ranks))
     best = None
-    for n in range(0,8):
+    for n in range(0,9):
         if (RANKS[n] in sorted_set_ranks and
            RANKS[n+1] in sorted_set_ranks and 
            RANKS[n+2] in sorted_set_ranks and 
@@ -79,6 +79,7 @@ def evaluate_hand(cards):
     ranks = sorted([card.rank for card in cards])
     suits = [card.suit for card in cards]
     rank_counts = Counter(ranks)
+    rank_counts_sorted = rank_counts.most_common()
     suit_counts = Counter(suits)
     if max(suit_counts.values()) >= 5:
         flush_suit = suit_counts.most_common(1)[0]
@@ -87,22 +88,26 @@ def evaluate_hand(cards):
             return (9,'A')
         elif straight_check(flush_rank) != None:
             return (8,straight_check(flush_rank))
-    if 4 in rank_counts.values():
-        return (7,rank_counts.most_common(1))
-    elif 3 in rank_counts.values() and 2 in rank_counts.values():
-        return (6,rank_counts.most_common(2))
+    if rank_counts_sorted[0][1] >= 4:
+        return (7,max([rank for rank, count in rank_counts.items() if count >= 4]))
+    elif rank_counts_sorted[0][1] >= 3 and rank_counts_sorted[1][1] >= 2:
+        threes = max([rank for rank, count in rank_counts.items() if count >= 3])
+        rest = max([rank for rank, count in rank_counts.items() if (count >= 2 and rank != threes)])
+        return (6,[threes, rest])
     elif max(suit_counts.values()) >= 5:
         return (5,0)
     elif straight_check(ranks) != None:
         return (4,straight_check(ranks))
     elif 3 in rank_counts.values():
-        return (3,rank_counts.most_common(1))
+        return (3,max([rank for rank, count in rank_counts.items() if count >= 3]))
     elif list(rank_counts.values()).count(2) >= 2:
-        return (2,rank_counts.most_common(2))
+        first_pair = max([rank for rank,count in rank_counts.items() if count >= 2])
+        second_pair = max([rank for rank,count in rank_counts.items() if (count >= 2 and rank != first_pair)])
+        return (2,[first_pair,second_pair])
     elif 2 in rank_counts.values():
         return (1,rank_counts.most_common(1))
     else:
-        return (0,ranks[-1])
+        return (0,max(ranks))
     
 def describe_rank(rank):
     if rank[0] == 0:
@@ -110,15 +115,15 @@ def describe_rank(rank):
     elif rank[0] == 1:
         return f"a pair of {rank[1][0][0]}s"
     elif rank[0] == 2:
-        return f"two pair, {rank[1][0][0]}s and {rank[1][1][0]}s"
+        return f"two pair, {rank[1][0]}s and {rank[1][1]}s"
     elif rank[0] == 3:
-        return f"a three of a kind, {rank[1][0][0]}s"
+        return f"a three of a kind, {rank[1]}s"
     elif rank[0] == 4:
         return f"a straight, starting from {rank[1]+2}"
     elif rank[0] == 5:
         return f"a flush"
     elif rank[0] == 6:
-        return f"a full house, {rank[1][0][0]} over {rank[1][1][0]}"
+        return f"a full house, {rank[1][0]} over {rank[1][1]}"
     elif rank[0] == 7:
         return f"a four of a kind, {rank[1]}s"
     elif rank[0] == 8:
