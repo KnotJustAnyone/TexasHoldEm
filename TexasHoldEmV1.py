@@ -59,6 +59,16 @@ def AllCall(this_player, game):
 def BetHalf(this_player, game):
     return round(this_player.bank/2)-this_player.bet
 
+def Human_Player(this_player, game):
+    bet = input(f"{max([player.bet for player in game.players])} to {this_player.name}.\n"+
+                f"{this_player.name} is in for {this_player.bet}. What do you want to put in?")
+    try:
+        bet = int(bet)
+    except ValueError:
+        print("Not an integer, returning zero bet")
+        bet = 0
+    return bet
+
 def straight_check(ranks):
     sorted_set_ranks = set(sorted(ranks))
     best = None
@@ -190,11 +200,10 @@ game = TexasHoldemGame(10)
 game.add_player("Alice",AllCall)
 game.add_player("Bob",AllCall)
 game.add_player("Carol",AllCall)
-game.add_player("David",AllCall)
+game.add_player("David",Human_Player)
 winner = None
 dealer = game.players[0]
 while len(game.players) > 1:
-    game.pot = 0
     game.list_players()
 
     #Call for Bets
@@ -248,12 +257,9 @@ while len(game.players) > 1:
     for player in game.players:
         if player.status > 0:
             print(f"{player.name}'s hand: {player.show_hand()}")
-    while game.pot > 0:
+    while max([player.status for player in game.players]) > 0:
         winner = game.evaluate_winner()
-        winning_bet = 0
-        for player in winner:
-            if player.bet > winning_bet:
-                winning_bet = player.bet
+        winning_bet = min([player.bet for player in winner])
         side_pot = 0
         for player in game.players:
             side_pot += min(player.bet,winning_bet)
@@ -261,8 +267,12 @@ while len(game.players) > 1:
             player.bet -= min(player.bet,winning_bet)
             if player.bet == 0:
                 player.status = 0
+        payout = int(side_pot/len(winner))
         for player in winner:
-            player.bank += side_pot/len(winner)
+            player.bank += payout
+            side_pot -= payout
+        game.pot += side_pot
+        side_pot = 0
     game.shuffle()
     dealer = game.next_player(dealer)
     while(dealer.bank == 0):
