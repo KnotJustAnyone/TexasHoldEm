@@ -169,6 +169,39 @@ class TexasHoldemGame:
 
     def show_community_cards(self):
         return ', '.join(str(card) for card in self.community_cards)
+    
+    def call_for_bets(self, better):
+        calls = -1
+        while (calls < len(game.players)-1):
+            if better.status != 1:
+                calls += 1
+            else:
+                bet = better.strategy(better,game)
+                if bet >= better.bank:
+                    better.status = 2
+                    if bet+better.bet > max([player.bet for player in game.players]):
+                        calls = 0
+                    game.pot += better.bank
+                    better.bet += better.bank
+                    better.bank = 0
+                    print(f"{better.name} goes all in")
+                elif bet+better.bet < max([player.bet for player in game.players]):
+                    better.status = 0
+                    calls += 1
+                    print(f"{better.name} folds")
+                elif bet+better.bet == max([player.bet for player in game.players]):
+                    calls += 1
+                    game.pot += bet
+                    better.bet += bet
+                    better.bank -= bet
+                    print(f"{better.name} calls")
+                elif bet+better.bet > max([player.bet for player in game.players]):
+                    calls = 0
+                    game.pot += bet
+                    better.bet += bet
+                    better.bank -= bet
+                    print(f"{better.name} raises to {better.bet}")
+            better = game.next_player(better)
 
     def evaluate_winner(self):
         best_hand = None
@@ -219,39 +252,9 @@ while len(game.players) > 1:
     better.bank -= 2
     better.bet += 2
     game.pot += 2
-    calls = -1
     better = game.next_player(better)
     game.deal_hands()
-    while (calls < len(game.players)-1):
-        if better.status != 1:
-            calls += 1
-        else:
-            bet = better.strategy(better,game)
-            if bet >= better.bank:
-                better.status = 2
-                if bet+better.bet > max([player.bet for player in game.players])
-                    calls = 0
-                game.pot += better.bank
-                better.bet += better.bank
-                better.bank = 0
-                print(f"{better.name} goes all in")
-            elif bet+better.bet < max([player.bet for player in game.players]):
-                better.status = 0
-                calls += 1
-                print(f"{better.name} folds")
-            elif bet+better.bet == max([player.bet for player in game.players]):
-                calls += 1
-                game.pot += bet
-                better.bet += bet
-                better.bank -= bet
-                print(f"{better.name} calls")
-            elif bet+better.bet > max([player.bet for player in game.players]):
-                calls = 0
-                game.pot += bet
-                better.bet += bet
-                better.bank -= bet
-                print(f"{better.name} raises to {better.bet}")
-        better = game.next_player(better)
+    game.call_for_bets(better)
     game.deal_community()
     print("Community Cards:", game.show_community_cards())
 
