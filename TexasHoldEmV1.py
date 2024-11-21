@@ -164,8 +164,11 @@ class TexasHoldemGame:
         for player in self.players:
             player.receive_cards(self.deck.deal(2))
 
-    def deal_community(self):
-        self.community_cards.extend(self.deck.deal(5))
+    def deal_flop(self):
+        self.community_cards.extend(self.deck.deal(3))
+    
+    def deal_card(self):
+        self.community_cards.extend(self.deck.deal(1))
 
     def show_community_cards(self):
         return ', '.join(str(card) for card in self.community_cards)
@@ -255,8 +258,15 @@ while len(game.players) > 1:
     better = game.next_player(better)
     game.deal_hands()
     game.call_for_bets(better)
-    game.deal_community()
+    game.deal_flop()
     print("Community Cards:", game.show_community_cards())
+    game.call_for_bets(game.next_player(dealer))
+    game.deal_card()
+    print("Community Cards:", game.show_community_cards())
+    game.call_for_bets(game.next_player(dealer))
+    game.deal_card()
+    print("Community Cards:", game.show_community_cards())
+    game.call_for_bets(game.next_player(dealer))
 
     # Determine the winner, Resolve the hand and reshuffle
     for player in game.players:
@@ -283,4 +293,4 @@ while len(game.players) > 1:
     while(dealer.bank == 0):
         dealer = game.next_player(dealer)
     game.players = [player for player in game.players if player.bank > 0]
-    input("Press enter for next round.\n")
+    input("Press enter to finish the round.\n")
